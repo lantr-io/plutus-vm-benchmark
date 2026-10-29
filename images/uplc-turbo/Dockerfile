@@ -1,44 +1,44 @@
 # check=skip=InvalidDefaultArgInFrom
 # uplc-turbo (Amaru), AST walker (Rust / Criterion). docs/IMAGE_CONTRACT.md.
 
-ARG RUST_VERSION
+ARG AMARU_UPLC_RUST_VERSION
 
 # =============================================================================
 # Build stage
 # =============================================================================
-FROM rust:${RUST_VERSION}-bookworm AS build
+FROM rust:${AMARU_UPLC_RUST_VERSION}-bookworm AS build
 
-ARG UPLC_TURBO_REPO
-ARG UPLC_TURBO_SHA
+ARG AMARU_UPLC_REPO
+ARG AMARU_UPLC_SHA
 # Keep peak memory low when other images build at the same time.
 ARG CARGO_BUILD_JOBS=2
 ENV CARGO_BUILD_JOBS=${CARGO_BUILD_JOBS}
 
-RUN git clone "$UPLC_TURBO_REPO" /src \
-    && cd /src && git checkout "$UPLC_TURBO_SHA"
+RUN git clone "$AMARU_UPLC_REPO" /src \
+    && cd /src && git checkout "$AMARU_UPLC_SHA"
 
 WORKDIR /src
 
 # Our harness replaces the upstream use_cases bench (PV 11, continues after a failing script,
 # PVB_CHECK_OUT check mode). See the header of images/uplc-turbo/use_cases.rs.
-COPY images/uplc-turbo/use_cases.rs /src/crates/uplc/benches/use_cases/main.rs
+COPY images/uplc-turbo/use_cases.rs /src/crates/amaru-uplc/benches/use_cases/main.rs
 
-# The release profile of Amaru, the node that ships this crate (spec D16): fat LTO and one codegen
-# unit (pragma-org/amaru Cargo.toml:194-196 at a393a0b; its release binaries are built with
-# `cargo build --release`, .github/workflows/release-begin.yml:202). The workspace of the pinned
-# repo has no [profile] section, so the environment sets it. `cargo build --release` builds the
-# bench with the release profile; the BENCH pair covers `cargo bench`.
+# The pinned Amaru workspace uses fat LTO and one codegen unit for release builds. Keep those
+# settings explicit and apply them to the bench profile too.
 ENV CARGO_PROFILE_RELEASE_LTO=true \
     CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 \
     CARGO_PROFILE_BENCH_LTO=true \
     CARGO_PROFILE_BENCH_CODEGEN_UNITS=1
 
 # The check: rustc built the crate and linked the bench binary with fat LTO and one codegen unit.
-RUN { cargo build -v --release --bench use_cases --manifest-path crates/uplc/Cargo.toml \
+RUN { cargo build -v --release --bench use_cases --manifest-path crates/amaru-uplc/Cargo.toml \
         > /tmp/build.log 2>&1 || { tail -50 /tmp/build.log; exit 1; }; } \
     && grep -E -- '--crate-name use_cases ' /tmp/build.log > /tmp/bench.log \
     && grep -q -E -- '-C lto( |=fat )' /tmp/bench.log && grep -q -- '-C codegen-units=1' /tmp/bench.log \
     && grep -E -- '--crate-name amaru_uplc ' /tmp/build.log | grep -q -- '-C codegen-units=1'
+
+RUN bench_bin=$(find /src/target/release -type f -perm /111 -name 'use_cases-*' | head -1) \
+    && test -n "$bench_bin" && cp "$bench_bin" /src/use_cases-bin
 
 # =============================================================================
 # Runtime stage
@@ -51,13 +51,9 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 procps \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /src/target /bench/uplc-turbo/target
-COPY --from=build /src/crates/uplc/benches /bench/uplc-turbo/crates/uplc/benches
-COPY --from=build /src/crates/uplc/Cargo.toml /bench/uplc-turbo/crates/uplc/Cargo.toml
-COPY --from=build /src/Cargo.toml /bench/uplc-turbo/Cargo.toml
-COPY --from=build /src/Cargo.lock /bench/uplc-turbo/Cargo.lock
-RUN bin=$(find /bench/uplc-turbo/target/release/deps -name 'use_cases-*' -type f ! -name '*.d' | head -1) \
-    && test -n "$bin" && ! ldd "$bin" | grep 'not found'
+COPY --from=build /src/use_cases-bin /bench/uplc-turbo/bin/use_cases
+COPY --from=build /src/crates/amaru-uplc/benches /bench/uplc-turbo/crates/amaru-uplc/benches
+RUN ! ldd /bench/uplc-turbo/bin/use_cases | grep 'not found'
 
 COPY check/reference/mainnet-plutusv3-costmodel.json /bench/mainnet-plutusv3-costmodel.json
 COPY parsers/ /bench/parsers/

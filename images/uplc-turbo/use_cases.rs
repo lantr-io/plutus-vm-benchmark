@@ -1,16 +1,13 @@
-// plutus-vm-benchmark harness for uplc-turbo. Replaces crates/uplc/benches/use_cases/main.rs
+// plutus-vm-benchmark harness for Amaru UPLC (image id uplc-turbo). Replaces
+// crates/amaru-uplc/benches/use_cases/main.rs
 // of the pinned repo (images/uplc-turbo/Dockerfile). docs/IMAGE_CONTRACT.md, spec D3/D4/D11.
 //
 // Parameters (check/README.md, "Evaluation parameters"): PlutusV3, protocol version 11,
 // counting mode (no limit), mainnet PlutusV3 cost model.
 //
-// Cost model: the timed loop uses Program::eval_version_budget(V3), which builds
-// CostModel::<BuiltinCostsV3>::default() per call. Those are the variant E numbers, equal to the
-// mainnet model. The mainnet array goes in through Program::eval_with_params only, because the
-// crate keeps the cost model types private (pub(crate) mod cost_model): an outside harness cannot
-// build the model once and reuse it, and eval_with_params rebuilds a 350-entry HashMap<String, _>
-// on every call. The check evaluates every script both ways and reports any difference as a
-// COSTMODEL_DRIFT line and an error row, so the timed path is proven to use the mainnet numbers.
+// Cost model: the timed loop uses Program::eval_version_budget(V3), which selects the default
+// protocol 11 cost model. The check also evaluates every script with the mainnet parameter array
+// through CostModel::new and reports any difference as COSTMODEL_DRIFT and an error row.
 //
 // Modes:
 //   PVB_CHECK_OUT=<csv>  one evaluation per script, write vm,script,status,cpu,mem; no timing
@@ -32,19 +29,13 @@
 // PVB_DATA_DIR=<dir>: read the .flat files from <dir> instead of DATA_DIR (run-uplc-turbo.sh
 // passes the selected scripts, $BENCH_DATA_DIR).
 
-use amaru_uplc::{
-    arena::Arena,
-    binder::DeBruijn,
-    flat,
-    machine::{ExBudget, PlutusVersion},
-};
+use amaru_kernel::{protocol_version::PROTOCOL_VERSION_11, PlutusVersion};
+use amaru_uplc::{arena::Arena, binder::DeBruijn, flat, machine::{CostModel, ExBudget}};
 use bumpalo::Bump;
 use criterion::Criterion;
 use std::{fs, io::Write, path::PathBuf};
 
 const DATA_DIR: &str = "benches/use_cases/plutus_use_cases";
-const PROTOCOL_MAJOR: u32 = 11;
-
 fn scripts() -> Vec<(String, Vec<u8>)> {
     let dir = std::env::var("PVB_DATA_DIR").unwrap_or_else(|_| DATA_DIR.to_string());
     let mut paths: Vec<PathBuf> = fs::read_dir(&dir)
@@ -64,7 +55,7 @@ fn scripts() -> Vec<(String, Vec<u8>)> {
 
 /// One evaluation as in the timed loop. Ok((cpu, mem)) or Err((message, cpu, mem)).
 fn eval_once(arena: &Arena, bytes: &[u8]) -> Result<(i64, i64), (String, i64, i64)> {
-    let program = flat::decode::<DeBruijn>(arena, bytes, PlutusVersion::V3, PROTOCOL_MAJOR)
+    let (program, _) = flat::decode::<DeBruijn>(arena, bytes, PlutusVersion::V3, PROTOCOL_VERSION_11)
         .map_err(|e| (format!("decode: {e:?}"), 0, 0))?;
     let result = program.eval_version_budget(arena, PlutusVersion::V3, ExBudget::max());
     let used = result.info.consumed_budget;
@@ -76,10 +67,13 @@ fn eval_once(arena: &Arena, bytes: &[u8]) -> Result<(i64, i64), (String, i64, i6
 
 /// The same evaluation with the mainnet array passed in.
 fn eval_mainnet(arena: &Arena, bytes: &[u8], cost_model: &[i64]) -> Option<(bool, i64, i64)> {
-    let program =
-        flat::decode::<DeBruijn>(arena, bytes, PlutusVersion::V3, PROTOCOL_MAJOR).ok()?;
-    let result =
-        program.eval_with_params(arena, PlutusVersion::V3, cost_model, ExBudget::max());
+    let (program, _) =
+        flat::decode::<DeBruijn>(arena, bytes, PlutusVersion::V3, PROTOCOL_VERSION_11).ok()?;
+    let result = program.eval(
+        arena,
+        CostModel::new(PlutusVersion::V3, PROTOCOL_VERSION_11, cost_model),
+        ExBudget::max(),
+    );
     let used = result.info.consumed_budget;
     Some((result.term.is_ok(), used.cpu, used.mem))
 }
@@ -141,9 +135,13 @@ fn bench(c: &mut Criterion, loops: &[&str]) {
             println!("PVB_LOOP d3 {name}");
             c.bench_function(&name, |b| {
                 b.iter(|| {
-                    let program =
-                        flat::decode::<DeBruijn>(&arena, &bytes, PlutusVersion::V3, PROTOCOL_MAJOR)
-                            .expect("decode");
+                    let (program, _) = flat::decode::<DeBruijn>(
+                        &arena,
+                        &bytes,
+                        PlutusVersion::V3,
+                        PROTOCOL_VERSION_11,
+                    )
+                    .expect("decode");
                     let result =
                         program.eval_version_budget(&arena, PlutusVersion::V3, ExBudget::max());
                     std::hint::black_box(result.term.is_ok());
@@ -155,9 +153,13 @@ fn bench(c: &mut Criterion, loops: &[&str]) {
             println!("PVB_LOOP eval {name}");
             // The decoded program lives in its own arena for the whole benchmark of this script.
             let program_arena = Arena::from_bump(Bump::with_capacity(1_048_576));
-            let program =
-                flat::decode::<DeBruijn>(&program_arena, &bytes, PlutusVersion::V3, PROTOCOL_MAJOR)
-                    .expect("decode");
+            let (program, _) = flat::decode::<DeBruijn>(
+                &program_arena,
+                &bytes,
+                PlutusVersion::V3,
+                PROTOCOL_VERSION_11,
+            )
+            .expect("decode");
             let mut group = c.benchmark_group("eval");
             group.bench_function(&name, |b| {
                 b.iter(|| {

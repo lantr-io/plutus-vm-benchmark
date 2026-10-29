@@ -214,8 +214,8 @@ VM_FACTS = {
 }
 
 # Where each VM comes from. The pinned version is read from .env at the repo root (env: the .env
-# key, pattern: a regex whose group 1 is the release tag, matched on "<value> # <comment>"); version
-# and tag are the fallback when .env has no match. release: the release page of the tag ({tag}).
+# key, pattern: a regex whose group 1 is the version, matched on "<value> # <comment>"); version
+# and tag are the fallback when .env has no match. release: the release or source link ({tag}, {sha}).
 _SCALUS_REPO = "https://github.com/scalus3/scalus"
 _BLAZE_REPO = "https://github.com/butaneprotocol/blaze-cardano"
 VM_SOURCES = {
@@ -246,12 +246,13 @@ VM_SOURCES = {
         "version": "@lucid-evolution/uplc {tag}",
         "release": "https://github.com/Anastasia-Labs/lucid-evolution/releases/tag/@lucid-evolution/uplc@{tag}"},
     "uplc-turbo": {
-        "repo": "https://github.com/pragma-org/uplc", "home": None,
-        "env": "UPLC_TURBO_SHA", "pattern": r"#\s*(amaru-uplc-v\d+(?:\.\d+)+)", "tag": "amaru-uplc-v0.4.0",
-        "release": "https://github.com/pragma-org/uplc/releases/tag/{tag}"},
+        "repo": "https://github.com/pragma-org/amaru", "home": None,
+        "env": "AMARU_UPLC_VERSION", "pattern": r"^(\d+(?:\.\d+)+)", "tag": "0.4.0",
+        "version": "amaru-uplc {tag}", "sha_env": "AMARU_UPLC_SHA",
+        "release": "https://github.com/pragma-org/amaru/tree/{sha}/crates/amaru-uplc"},
     "plutigo": {
         "repo": "https://github.com/blinklabs-io/plutigo", "home": None,
-        "env": "PLUTIGO_SHA", "pattern": r"#\s*(v\d+(?:\.\d+)+)", "tag": "v0.1.10",
+        "env": "PLUTIGO_SHA", "pattern": r"#\s*(v\d+(?:\.\d+)+)", "tag": "v0.10.0",
         "release": "https://github.com/blinklabs-io/plutigo/releases/tag/{tag}"},
     "blaze-jsc": {
         "repo": _BLAZE_REPO, "home": "https://blaze.butane.dev",
@@ -350,12 +351,22 @@ def vm_links(env: dict[str, str]) -> dict[str, dict]:
     the .env pin when its pattern matches, else from VM_SOURCES."""
     out = {}
     for vm, s in VM_SOURCES.items():
+        if vm == "uplc-turbo" and "AMARU_UPLC_VERSION" not in env and "UPLC_TURBO_SHA" in env:
+            # Existing result directories keep the original pragma-org/uplc pin in pins.env.
+            s = {
+                "repo": "https://github.com/pragma-org/uplc", "home": None,
+                "env": "UPLC_TURBO_SHA",
+                "pattern": r"#\s*(amaru-uplc-v\d+(?:\.\d+)+)",
+                "tag": "amaru-uplc-v0.4.0", "version": "{tag}",
+                "release": "https://github.com/pragma-org/uplc/releases/tag/{tag}",
+            }
         m = re.search(s["pattern"], env.get(s["env"], ""))
         tag = m.group(1) if m else s["tag"]
+        sha = env.get(s.get("sha_env", ""), "").split("#", 1)[0].strip()
         out[vm] = {
             "repo": s["repo"],
             "home": s["home"],
-            "release": s["release"].format(tag=tag),
+            "release": s["release"].format(tag=tag, sha=sha),
             "version": s.get("version", "{tag}").format(tag=tag),
             "used_by": [{"name": n, "kind": k, "url": u, "proof": p} for n, k, u, p in USED_BY.get(vm, [])],
         }

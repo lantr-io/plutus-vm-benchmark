@@ -34,15 +34,15 @@ fi
 echo "Criterion options: ${TIMING[*]} --noplot"
 
 # Symlink canonical flat files into expected location
-rm -rf "$BENCH_DIR/crates/uplc/benches/use_cases/plutus_use_cases"
-ln -sf "$DATA_DIR" "$BENCH_DIR/crates/uplc/benches/use_cases/plutus_use_cases"
+rm -rf "$BENCH_DIR/crates/amaru-uplc/benches/use_cases/plutus_use_cases"
+ln -sf "$DATA_DIR" "$BENCH_DIR/crates/amaru-uplc/benches/use_cases/plutus_use_cases"
 
 # Binary expects benches/use_cases/plutus_use_cases relative to cwd
-cd "$BENCH_DIR/crates/uplc"
+cd "$BENCH_DIR/crates/amaru-uplc"
 
 # Run Criterion benchmark (binary already compiled in build stage)
-BENCH_BIN=$(find "$BENCH_DIR/target/release/deps" -name 'use_cases-*' -type f ! -name '*.d' | head -1)
-if [[ -z "$BENCH_BIN" ]]; then
+BENCH_BIN="$BENCH_DIR/bin/use_cases"
+if [[ ! -x "$BENCH_BIN" ]]; then
     echo "ERROR: could not find use_cases benchmark binary" | tee "$RUN_DIR/uplc-turbo-raw.log"
     exit 1
 fi
