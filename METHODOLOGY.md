@@ -87,6 +87,10 @@ line-up that miss rule 1 or rule 2. Each row shows its reason:
 | no downstream user | A release, but no released project outside its repo depends on it | Scalus JIT, blaze-plutus |
 | outdated | A built-in cost model from before protocol version 11 and no API for a cost model; badge "outdated cost model" (its ExUnits equal Haskell with that model) | llvm-uplc |
 
+PlutusCoreBlaster is proposed as an additional unranked experimental entry, pending maintainer
+approval. It has no stable release, and a released downstream user satisfying rule 2 has not
+been established. The ranking rules above still apply.
+
 An experimental row never gets a rank. It is never a competitor in the penalty rule, and it has no
 line in the history chart. The gate checks each of its scripts. A script that fails is marked
 "failed check", and its time is left out of the row's geometric mean. A row with no passing
@@ -154,6 +158,7 @@ and the runner is `scripts/run-<vm>.sh`.
 | aiken | Criterion.rs | Criterion.rs default warm-up, 5 s measurement |
 | uplc-turbo | Criterion.rs | Criterion.rs default warm-up, 5 s measurement |
 | plutigo | Go testing.B | Automatic `b.N` scaling, `-test.benchtime=5s` |
+| plutuscore-lean | Upstream native Lean `bench_cek` | Five warm-up iterations, at least 50 samples and at least 5 s in measured operations per loop; individual timings, no outlier removal |
 | blaze-v8, scalus-js, aiken-wasm | One shared loop (JMH shape, `images/node-base/time.mjs`), plain Node.js | Adaptive warm-up (5 to 30 s), three 5 s measurements (a JIT runtime, V8) |
 
 ### Shared base images of the JIT rows

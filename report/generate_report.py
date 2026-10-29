@@ -59,7 +59,7 @@ VM_ORDER = [
     "haskell", "scalus-jit", "scalus-cek", "scalus-js",
     "aiken", "aiken-wasm", "uplc-turbo",
     "plutigo", "blaze-jsc", "blaze-v8",
-    "chrysalis", "chrysalis-aot", "julc-java", "plutuz", "llvm-uplc-jit", "uplc-turbo-bc",
+    "chrysalis", "chrysalis-aot", "julc-java", "plutuscore-lean", "plutuz", "llvm-uplc-jit", "uplc-turbo-bc",
 ]
 
 # The header logo in report/template.html, a file in docs/.
@@ -99,6 +99,8 @@ VM_BADGES = {
 
 # VMs that are run, gated and shown with their numbers, but not ranked (spec D17): {vm: reason}.
 EXPERIMENTAL = {
+    "plutuscore-lean": "not ranked: PlutusCoreBlaster has no stable release tag; a released downstream "
+                       "user satisfying the inclusion policy has not been established. Proposed experimental entry",
     "blaze-v8": "not ranked: no released project outside the Blaze repo depends on @blaze-cardano/plutus "
                 "yet; Blaze itself evaluates scripts with @blaze-cardano/vm (Aiken uplc as WASM) (spec D17)",
     "blaze-jsc": "not ranked: no released project outside the Blaze repo depends on @blaze-cardano/plutus "
@@ -121,6 +123,7 @@ EXPERIMENTAL = {
 # The short visible reason of each EXPERIMENTAL VM (spec D22): next to its "experimental" badge,
 # in the summary table and the VM list. The long reason above is the tooltip and the card text.
 EXPERIMENTAL_TAG = {
+    "plutuscore-lean": "no release",
     "blaze-v8": "no downstream user",
     "blaze-jsc": "no downstream user",
     "scalus-jit": "no downstream user",
@@ -173,6 +176,7 @@ def d3_ranked(present_vms) -> list[str]:
     return [vm for vm in present_vms if vm not in DECODE_CACHED]
 
 VM_LABELS = {
+    "plutuscore-lean": "PlutusCoreBlaster (Lean)",
     "uplc-turbo": "amaru-uplc (Rust)",
     "plutigo": "Plutigo (Go)",
     "blaze-jsc": "blaze-plutus (TypeScript / Bun JSC)",
@@ -195,6 +199,7 @@ VM_LABELS = {
 # What each VM is, for the "VMs in this benchmark" list: implementation language, runtime and
 # execution model. The model uses the page's words (template.html engineCode).
 VM_FACTS = {
+    "plutuscore-lean": {"lang": "Lean", "runtime": "native", "model": "Interpreter (CEK)"},
     "haskell": {"lang": "Haskell", "runtime": "GHC", "model": "Interpreter (CEK)"},
     "scalus-jit": {"lang": "Scala", "runtime": "GraalVM", "model": "JIT compiler (UPLC → JVM bytecode)"},
     "scalus-cek": {"lang": "Scala", "runtime": "GraalVM", "model": "Interpreter (CEK)"},
@@ -219,6 +224,10 @@ VM_FACTS = {
 _SCALUS_REPO = "https://github.com/scalus3/scalus"
 _BLAZE_REPO = "https://github.com/butaneprotocol/blaze-cardano"
 VM_SOURCES = {
+    "plutuscore-lean": {
+        "repo": "https://github.com/input-output-hk/PlutusCoreBlaster", "home": None,
+        "env": "PLUTUSCORE_LEAN_SHA", "pattern": r"^([0-9a-f]{7})", "tag": "22f6109", "version": "development {tag}",
+        "release": "https://github.com/input-output-hk/PlutusCoreBlaster/commit/{tag}"},
     "haskell": {
         "repo": "https://github.com/IntersectMBO/plutus", "home": "https://plutus.cardano.intersectmbo.org",
         "env": "HASKELL_SHA", "pattern": r"release (\d+(?:\.\d+)+)", "tag": "1.70.0.0",

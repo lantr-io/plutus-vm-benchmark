@@ -20,6 +20,7 @@ not published.
 | VM | Mode | How the harness loads the mainnet model |
 |---|---|---|
 | haskell | strict | `gate-ref` path, or `HASKELL_SHA` at 1.63.0.0 (its compiled-in model = mainnet) |
+| plutuscore-lean | strict | Upstream `bench_cek` uses the library's compiled-in variant E semantics and cost model, counting all costs including startup. It has no runtime model loader; its status and ExUnits must match the strict reference on all 89 scripts. |
 | scalus-cek, scalus-jit | strict | The harness reads `reference/mainnet-plutusv3-costmodel.json` (copied into the image, path in `SCALUS_COST_MODEL`): `MachineParams.fromCostModels(CostModels(Map(PlutusV3.ordinal -> array)), PlutusV3, vanRossemPV)`, then `makePlutusV3VM(params, vanRossemPV)` (`images/scalus/harness/.../Harness.scala`) |
 | uplc-turbo | strict | Ships the variant E numbers in `BuiltinCostsV3::default()` |
 | plutigo | strict | `cek.NewEvalContext(lang.LanguageVersionV3, cek.ProtoVersion{Major: 11}, mainnetArray)` (`cek/eval_context.go:31`), then `cek.NewMachine(lang.LanguageVersionV3, 0, ctx)`. Takes the 350-value array (`lang/v3.go` has the V3 names up to PV11). The bench must stop taking the language from the program version |
