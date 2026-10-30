@@ -5,9 +5,9 @@
 // Parameters (check/README.md, "Evaluation parameters"): PlutusV3, protocol version 11,
 // counting mode (no limit), mainnet PlutusV3 cost model.
 //
-// Cost model: the timed loop uses Program::eval_version_budget(V3), which selects the default
-// protocol 11 cost model. The check also evaluates every script with the mainnet parameter array
-// through CostModel::new and reports any difference as COSTMODEL_DRIFT and an error row.
+// Cost model: timed loops build the mainnet protocol 11 cost model once and pass a clone to each
+// evaluation. The check also compares it with the default model and reports any difference as
+// COSTMODEL_DRIFT and an error row.
 //
 // Modes:
 //   PVB_CHECK_OUT=<csv>  one evaluation per script, write vm,script,status,cpu,mem; no timing
@@ -17,8 +17,8 @@
 //                              <name>, Criterion dir target/criterion/<name>/
 //                        eval  evaluation only (uplc-turbo-eval.csv): the program is decoded once
 //                              into its own arena before timing; each iteration evaluates it into
-//                              a second arena, which is reset after every iteration. The machine
-//                              and its budget are new on every call (Program::eval_version_budget).
+//                              a second arena, which is reset after every iteration. Each
+//                              Program::eval call creates a fresh machine using ExBudget::max().
 //                              Benchmark eval/<name>, Criterion dir target/criterion/eval/<name>/
 //                        A loop prints "PVB_LOOP <loop> <name>" before it starts
 //                        (parsers/fill_failures.py --loop). A script that fails its first
@@ -120,6 +120,8 @@ fn check(out: &str) {
 }
 
 fn bench(c: &mut Criterion, loops: &[&str]) {
+    let mainnet_cost_model = load_cost_model();
+    let cost_model = CostModel::new(PlutusVersion::V3, PROTOCOL_VERSION_11, &mainnet_cost_model);
     let mut arena = Arena::from_bump(Bump::with_capacity(1_048_576));
     for (name, bytes) in scripts() {
         // A panic inside b.iter would abort the whole run: evaluate once first, skip on failure.
@@ -142,8 +144,7 @@ fn bench(c: &mut Criterion, loops: &[&str]) {
                         PROTOCOL_VERSION_11,
                     )
                     .expect("decode");
-                    let result =
-                        program.eval_version_budget(&arena, PlutusVersion::V3, ExBudget::max());
+                    let result = program.eval(&arena, cost_model.clone(), ExBudget::max());
                     std::hint::black_box(result.term.is_ok());
                     arena.reset();
                 })
@@ -163,8 +164,7 @@ fn bench(c: &mut Criterion, loops: &[&str]) {
             let mut group = c.benchmark_group("eval");
             group.bench_function(&name, |b| {
                 b.iter(|| {
-                    let result =
-                        program.eval_version_budget(&arena, PlutusVersion::V3, ExBudget::max());
+                    let result = program.eval(&arena, cost_model.clone(), ExBudget::max());
                     std::hint::black_box(result.term.is_ok());
                     drop(result);
                     arena.reset();

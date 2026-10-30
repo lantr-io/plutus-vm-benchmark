@@ -141,7 +141,7 @@ func BenchmarkPvbFlatFiles(b *testing.B) {
 			machine := pvbMachine(ctx)
 			decoder := syn.NewDeBruijnDecoder()
 			for b.Loop() {
-				program, err := decoder.Decode(content)
+				program, err := decoder.DecodeBorrowed(content)
 				if err != nil {
 					b.Fatalf("decode error: %v", err)
 				}
