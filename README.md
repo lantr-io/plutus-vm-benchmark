@@ -28,7 +28,7 @@ Library and node authors can use it to choose an evaluator.
   [plutus-core](https://github.com/IntersectMBO/plutus). A VM that fails is not ranked.
 - **Released versions only, for the ranking.** Every ranked VM is pinned to a release in `.env`.
   Pre-releases, such as `-alpha` or `0.1.0-preNN` versions, do not count. An experimental VM is
-  pinned to its newest pre-release tag, or to a `main` commit if it has no tag.
+  pinned by full commit SHA, on any branch: by default its newest pre-release tag, or a `main` commit.
 - **Monthly runs on fixed hardware.** One Hetzner dedicated-vCPU server type (`ccx43`) runs every VM,
   up to 3 at once, each on its own CPU cores. Each run first checks that its server is not slow
   (server qualification, see [METHODOLOGY.md](METHODOLOGY.md#hardware)).
@@ -79,7 +79,7 @@ What changed:
   the mainnet cost model and costing on, for every VM.
 - **Curated line-up.** A ranked VM has a published release, a downstream user today (a released
   project outside its own repo that depends on it), and passes the correctness gate. A VM that caches the decoded program or compiles it ahead gets a
-  badge and is ranked only on eval only. An unranked [Experimental](#experimental) section shows VMs of the original SAIB line-up
+  badge and is ranked only on eval only. An unranked [Experimental](#experimental) section shows VMs
   that have no stable release or no downstream user. See [Not included](#not-included).
 - **Eval-only column.** A second timing evaluates a program decoded once before timing.
 - **Automated monthly runs.** GitHub Actions creates a Hetzner server, installs NixOS on it, checks
@@ -122,7 +122,7 @@ build contains both fixes. No Aiken release contains them yet.
 
 ### Experimental
 
-These rows are not ranked (spec D22). Each one is a VM of the original SAIB line-up that has no
+These rows are not ranked (spec D22). Each one is a VM that has no
 stable release, no downstream user, or an outdated cost model. The page shows the reason next to each row. They never get a
 rank, they are not competitors in the penalty rule, and they have no line in the history chart.
 The gate still checks every script: a script that fails is marked "failed check", and its time
@@ -150,7 +150,7 @@ A VM is ranked when it meets three rules:
 3. It passes the correctness gate.
 
 A VM that caches the decoded program, or compiles it ahead, gets a badge and is ranked only on eval
-only: its decode runs outside the timed loop. A VM of the original SAIB line-up that misses rule 1 or rule 2 goes to
+only: its decode runs outside the timed loop. A VM that misses rule 1 or rule 2 goes to
 [Experimental](#experimental).
 
 | Project | Rule that fails |

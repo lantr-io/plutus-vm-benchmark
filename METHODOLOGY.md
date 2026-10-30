@@ -77,8 +77,8 @@ eval only (D21: its decode runs outside the timed loop):
 | decode and compile excluded | The decode and the compile run once per script, before timing | Scalus JIT |
 | decode cached (by the library) | The library caches the decoded program; the harness cannot turn the cache off | Aiken WASM (`@lucid-evolution/uplc` 0.4.0) |
 
-The page shows an unranked "Experimental" section (spec D22). It holds VMs of the original SAIB
-line-up that miss rule 1 or rule 2. Each row shows its reason:
+The page shows an unranked "Experimental" section (spec D22). It holds VMs that miss rule 1 or
+rule 2. Each is pinned by full commit SHA, on any branch. Each row shows its reason:
 
 | Reason | Meaning | Example |
 |---|---|---|
