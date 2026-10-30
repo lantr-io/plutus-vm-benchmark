@@ -88,7 +88,7 @@ What changed:
 
 ## VMs Benchmarked
 
-| Image | VM | Language | Benchmark framework | Project | Pinned release |
+| Image | VM | Language | Benchmark framework | Project | Pinned version |
 |---|---|---|---|---|---|
 | `haskell` | plutus-core | Haskell | Criterion | [IntersectMBO/plutus](https://github.com/IntersectMBO/plutus) | [1.70.0.0](https://github.com/IntersectMBO/plutus/releases/tag/1.70.0.0) |
 | `scalus-cek` | Scalus CEK | Scala / GraalVM 25 | JMH (`images/jvm-base`) | [scalus3/scalus](https://github.com/scalus3/scalus) | [v1.4.1](https://github.com/scalus3/scalus/releases/tag/v1.4.1) |
@@ -96,8 +96,8 @@ What changed:
 | `scalus-js` | Scalus.js | Scala.js / Node.js | shared Node.js loop (`images/node-base`) | [scalus3/scalus](https://github.com/scalus3/scalus) | npm `scalus` [1.4.1](https://github.com/scalus3/scalus/releases/tag/v1.4.1) |
 | `aiken` | Aiken uplc | Rust | Criterion.rs | [aiken-lang/aiken](https://github.com/aiken-lang/aiken) | [v1.1.24](https://github.com/aiken-lang/aiken/releases/tag/v1.1.24) |
 | `aiken-wasm` | Aiken uplc as WASM (Lucid Evolution), badge "decode cached (by the library)" | Rust → WASM / Node.js | shared Node.js loop (`images/node-base`) | [Anastasia-Labs/lucid-evolution](https://github.com/Anastasia-Labs/lucid-evolution/tree/main/packages/uplc) | npm `@lucid-evolution/uplc` [0.4.0](https://github.com/Anastasia-Labs/lucid-evolution/releases/tag/%40lucid-evolution%2Fuplc%400.4.0) |
-| `uplc-turbo` | amaru-uplc (Amaru) | Rust | Criterion.rs | [pragma-org/uplc](https://github.com/pragma-org/uplc) | [amaru-uplc-v0.4.0](https://github.com/pragma-org/uplc/releases/tag/amaru-uplc-v0.4.0) |
-| `plutigo` | Plutigo (Dingo) | Go | testing.B | [blinklabs-io/plutigo](https://github.com/blinklabs-io/plutigo) | [v0.1.10](https://github.com/blinklabs-io/plutigo/releases/tag/v0.1.10) |
+| `uplc-turbo` | amaru-uplc (Amaru) | Rust | Criterion.rs | [pragma-org/amaru](https://github.com/pragma-org/amaru) | [`amaru-uplc` 0.4.0 (Amaru v10.11.20261022)](https://github.com/pragma-org/amaru/tree/ddd3fdfc1c01b29d09a4dd59f4ecd2872062153b/crates/amaru-uplc) |
+| `plutigo` | Plutigo (Dingo) | Go | testing.B | [blinklabs-io/plutigo](https://github.com/blinklabs-io/plutigo) | [v0.10.0](https://github.com/blinklabs-io/plutigo/releases/tag/v0.10.0) |
 | `blaze-v8` | blaze-plutus on Node (V8), [experimental](#experimental), not ranked | TypeScript | shared Node.js loop (`images/node-base`) | [butaneprotocol/blaze-cardano](https://github.com/butaneprotocol/blaze-cardano) | [@blaze-cardano/plutus 0.1.1](https://github.com/butaneprotocol/blaze-cardano/releases/tag/%40blaze-cardano%2Fplutus%400.1.1) |
 | `chrysalis` | Chrysalis CEK, [experimental](#experimental), not ranked | C# / .NET 10 (JIT) | BenchmarkDotNet | [SAIB-Inc/Chrysalis](https://github.com/SAIB-Inc/Chrysalis) | NuGet `Chrysalis.Plutus` [1.7.14-alpha](https://www.nuget.org/packages/Chrysalis.Plutus/1.7.14-alpha) (pre-release) |
 | `chrysalis-aot` | Chrysalis CEK, [experimental](#experimental), not ranked | C# / .NET 10 (NativeAOT) | BenchmarkDotNet | [SAIB-Inc/Chrysalis](https://github.com/SAIB-Inc/Chrysalis) | NuGet `Chrysalis.Plutus` [1.7.14-alpha](https://www.nuget.org/packages/Chrysalis.Plutus/1.7.14-alpha) (pre-release) |
