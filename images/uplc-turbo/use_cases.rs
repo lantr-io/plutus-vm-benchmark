@@ -5,9 +5,9 @@
 // Parameters (check/README.md, "Evaluation parameters"): PlutusV3, protocol version 11,
 // counting mode (no limit), mainnet PlutusV3 cost model.
 //
-// Cost model: timed loops build the mainnet protocol 11 cost model once and pass a clone to each
-// evaluation. The check also compares it with the default model and reports any difference as
-// COSTMODEL_DRIFT and an error row.
+// Cost model: timed loops build the mainnet protocol 11 cost model once and pass it by reference
+// to each evaluation. The check also compares it with the default model and reports any difference
+// as COSTMODEL_DRIFT and an error row.
 //
 // Modes:
 //   PVB_CHECK_OUT=<csv>  one evaluation per script, write vm,script,status,cpu,mem; no timing
@@ -71,7 +71,7 @@ fn eval_mainnet(arena: &Arena, bytes: &[u8], cost_model: &[i64]) -> Option<(bool
         flat::decode::<DeBruijn>(arena, bytes, PlutusVersion::V3, PROTOCOL_VERSION_11).ok()?;
     let result = program.eval(
         arena,
-        CostModel::new(PlutusVersion::V3, PROTOCOL_VERSION_11, cost_model),
+        &CostModel::new(PlutusVersion::V3, PROTOCOL_VERSION_11, cost_model),
         ExBudget::max(),
     );
     let used = result.info.consumed_budget;
@@ -144,7 +144,7 @@ fn bench(c: &mut Criterion, loops: &[&str]) {
                         PROTOCOL_VERSION_11,
                     )
                     .expect("decode");
-                    let result = program.eval(&arena, cost_model.clone(), ExBudget::max());
+                    let result = program.eval(&arena, &cost_model, ExBudget::max());
                     std::hint::black_box(result.term.is_ok());
                     arena.reset();
                 })
@@ -164,7 +164,7 @@ fn bench(c: &mut Criterion, loops: &[&str]) {
             let mut group = c.benchmark_group("eval");
             group.bench_function(&name, |b| {
                 b.iter(|| {
-                    let result = program.eval(&arena, cost_model.clone(), ExBudget::max());
+                    let result = program.eval(&arena, &cost_model, ExBudget::max());
                     std::hint::black_box(result.term.is_ok());
                     drop(result);
                     arena.reset();

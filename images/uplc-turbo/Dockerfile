@@ -23,6 +23,21 @@ WORKDIR /src
 # PVB_CHECK_OUT check mode). See the header of images/uplc-turbo/use_cases.rs.
 COPY images/uplc-turbo/use_cases.rs /src/crates/amaru-uplc/benches/use_cases/main.rs
 
+# Borrow &CostModel across iterations instead of cloning the full CostModel on every evaluation.
+RUN sed -i \
+        -e "s/pub struct Machine<'a>/pub struct Machine<'a, 'c>/" \
+        -e "s/pub(super) costs: CostModel,/pub(super) costs: \&'c CostModel,/" \
+        -e "s/impl<'a> Machine<'a>/impl<'a, 'c> Machine<'a, 'c>/" \
+        -e "s/costs: CostModel)/costs: \&'c CostModel)/" \
+        crates/amaru-uplc/src/machine/cek.rs \
+    && sed -i \
+        -e "s/impl<'a> Machine<'a>/impl<'a, 'c> Machine<'a, 'c>/" \
+        crates/amaru-uplc/src/machine/runtime.rs \
+    && sed -i \
+        -e "s/pub fn eval(&'a self, arena: &'a Arena, cost_model: CostModel, budget: ExBudget)/pub fn eval<'c>(\&'a self, arena: \&'a Arena, cost_model: \&'c CostModel, budget: ExBudget)/" \
+        -e "s/match plutus_version {/\&match plutus_version {/" \
+        crates/amaru-uplc/src/program.rs
+
 # The pinned Amaru workspace uses fat LTO and one codegen unit for release builds. Keep those
 # settings explicit and apply them to the bench profile too.
 ENV CARGO_PROFILE_RELEASE_LTO=true \
