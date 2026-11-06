@@ -24,12 +24,26 @@ WORKDIR /src
 # PVB_CHECK_OUT check mode). See the header of images/uplc-turbo-bc/use_cases.rs.
 COPY images/uplc-turbo-bc/use_cases.rs /src/crates/uplc/benches/use_cases/main.rs
 
-# The harness builds the mainnet cost model once and clones it per evaluation (bytecode::vm::execute
-# takes it by value). The pinned cost model types derive only Debug and PartialEq, so add Clone.
-# That adds an impl and changes no code the VM runs. The check: all 21 derives got it.
-RUN sed -i 's/^#\[derive(Debug, PartialEq)\]$/#[derive(Debug, PartialEq, Clone)]/' \
-        $(grep -rl '^#\[derive(Debug, PartialEq)\]$' crates/uplc/src/machine/cost_model) \
-    && test "$(grep -r '^#\[derive(Debug, PartialEq, Clone)\]$' crates/uplc/src/machine/cost_model | wc -l)" -eq 22
+# Borrow &CostModel across iterations instead of cloning the full CostModel on every evaluation.
+RUN sed -i \
+        -e "s/pub struct Machine<'a, B: BuiltinCostModel, V: Eval<'a>>/pub struct Machine<'a, 'c, B: BuiltinCostModel, V: Eval<'a>>/" \
+        -e "s/pub(crate) costs: CostModel<B>,/pub(crate) costs: \&'c CostModel<B>,/" \
+        -e "s/impl<'a, B: BuiltinCostModel, V: Eval<'a>> Machine<'a, B, V>/impl<'a, 'c, B: BuiltinCostModel, V: Eval<'a>> Machine<'a, 'c, B, V>/" \
+        -e "s/costs: CostModel<B>,/costs: \&'c CostModel<B>,/" \
+        crates/uplc/src/machine/cek.rs \
+    && sed -i \
+        -e "s/impl<'a, B: BuiltinCostModel, V: Eval<'a>> Machine<'a, B, V>/impl<'a, 'c, B: BuiltinCostModel, V: Eval<'a>> Machine<'a, 'c, B, V>/" \
+        crates/uplc/src/machine/runtime.rs \
+    && sed -i \
+        -e "s/cost_model: CostModel<B>,/cost_model: \&CostModel<B>,/" \
+        -e "s/CostModel::<BuiltinCosts/\&CostModel::<BuiltinCosts/" \
+        crates/uplc/src/program.rs \
+    && sed -i \
+        -e "s/costs: CostModel<B>,/costs: \&CostModel<B>,/" \
+        -e "s/struct Vm<'a, 'b, B: BuiltinCostModel>/struct Vm<'a, 'b, 'c, B: BuiltinCostModel>/" \
+        -e "s/machine: &'b mut Machine<'a, B, DeBruijn>,/machine: \&'b mut Machine<'a, 'c, B, DeBruijn>,/" \
+        -e "s/impl<'a, 'b, B: BuiltinCostModel> Vm<'a, 'b, B>/impl<'a, 'b, 'c, B: BuiltinCostModel> Vm<'a, 'b, 'c, B>/" \
+        crates/uplc/src/bytecode/vm.rs
 
 # The release profile of Amaru, the node that ships this crate (spec D16): fat LTO and one codegen
 # unit (pragma-org/amaru Cargo.toml:194-196 at a393a0b; its release binaries are built with
