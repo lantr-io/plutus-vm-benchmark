@@ -42,7 +42,7 @@
     --vm-aiken-wasm: #6A3DE8;
     --vm-chrysalis: #C0168C;
     --vm-chrysalis-aot: #E36FC1;
-    --vm-uplc-turbo: #0E9F6E;
+    --vm-amaru-uplc: #0E9F6E;
     --vm-uplc-turbo-bc: #14978F;
     --vm-plutigo: #D2581A;
     --vm-plutuz: #B89600;
@@ -70,7 +70,7 @@
       --pass: #4ade80; --fail: #f87171; --warn: #facc15;
       --vm-scalus-cek: #F0504C; --vm-scalus-jit: #C9373B; --vm-scalus-js: #F28B95; --vm-haskell: #4BB4D5;
       --vm-aiken: #B65CEB; --vm-aiken-wasm: #8F6BFF; --vm-chrysalis: #E04AB0; --vm-chrysalis-aot: #F29AD6;
-      --vm-uplc-turbo: #2BC48D; --vm-uplc-turbo-bc: #3CC9B8; --vm-plutigo: #EE7A3C; --vm-plutuz: #F2C230;
+      --vm-amaru-uplc: #2BC48D; --vm-uplc-turbo-bc: #3CC9B8; --vm-plutigo: #EE7A3C; --vm-plutuz: #F2C230;
       --vm-blaze-v8: #5B82FF; --vm-blaze-jsc: #5B82FF; --vm-julc-java: #F4F4F5;
       --vm-llvm-uplc-jit: #737373; --vm-other: #8a8a8a;
     }
@@ -82,7 +82,7 @@
     --pass: #4ade80; --fail: #f87171; --warn: #facc15;
     --vm-scalus-cek: #F0504C; --vm-scalus-jit: #C9373B; --vm-scalus-js: #F28B95; --vm-haskell: #4BB4D5;
     --vm-aiken: #B65CEB; --vm-aiken-wasm: #8F6BFF; --vm-chrysalis: #E04AB0; --vm-chrysalis-aot: #F29AD6;
-    --vm-uplc-turbo: #2BC48D; --vm-uplc-turbo-bc: #3CC9B8; --vm-plutigo: #EE7A3C; --vm-plutuz: #F2C230;
+    --vm-amaru-uplc: #2BC48D; --vm-uplc-turbo-bc: #3CC9B8; --vm-plutigo: #EE7A3C; --vm-plutuz: #F2C230;
     --vm-blaze-v8: #5B82FF; --vm-blaze-jsc: #5B82FF; --vm-julc-java: #F4F4F5;
     --vm-llvm-uplc-jit: #737373; --vm-other: #8a8a8a;
   }
@@ -757,7 +757,7 @@ const REPORT = {{REPORT_JSON}};
 // tables). plutus-core is the reference and takes a neutral grey; the experimental Scalus JIT is a
 // light neutral, dashed / hatched.
 const VM_META = {
-  'uplc-turbo':     { label: 'amaru-uplc',     lang: 'Rust',        runtime: 'AST walker',     engine: 'AST walker',                   color: 'var(--vm-uplc-turbo)', compiler: 'rustc 1.94' },
+  'amaru-uplc':     { label: 'amaru-uplc',     lang: 'Rust',        runtime: 'AST walker',     engine: 'AST walker',                   color: 'var(--vm-amaru-uplc)', compiler: 'rustc nightly-2026-09-04' },
   'plutigo':        { label: 'Plutigo',        lang: 'Go',          runtime: 'CEK',            engine: 'CEK interpreter',              color: 'var(--vm-plutigo)', compiler: 'Go 1.26' },
   'blaze-jsc':      { label: 'blaze-plutus',   lang: 'TypeScript',  runtime: 'Bun (JSC)',      engine: 'CEK interpreter',              color: 'var(--vm-blaze-jsc)', compiler: 'Bun 1.3.10' },
   'blaze-v8':       { label: 'blaze-plutus',   lang: 'TypeScript',  runtime: 'Node (V8)',      engine: 'CEK interpreter',              color: 'var(--vm-blaze-v8)', compiler: 'Node.js 24' },
@@ -774,7 +774,7 @@ const VM_META = {
   'uplc-turbo-bc':  { label: 'amaru-uplc BC (fork)', lang: 'Rust',        runtime: 'bytecode VM',    engine: 'UPLC → bytecode VM',           color: 'var(--vm-uplc-turbo-bc, var(--vm-other))', compiler: 'rustc 1.94' },
   'llvm-uplc-jit':  { label: 'llvm-uplc JIT',  lang: 'C / C++',     runtime: 'native',         engine: 'UPLC → native code JIT',       color: 'var(--vm-llvm-uplc-jit, var(--vm-other))', compiler: 'LLVM 22' },
 };
-const VM_ORDER = ['haskell','scalus-jit','scalus-cek','scalus-js','aiken','aiken-wasm','uplc-turbo','blaze-v8','blaze-jsc','plutigo','chrysalis','chrysalis-aot','julc-java','plutuz','llvm-uplc-jit','uplc-turbo-bc'];
+const VM_ORDER = ['haskell','scalus-jit','scalus-cek','scalus-js','aiken','aiken-wasm','amaru-uplc','blaze-v8','blaze-jsc','plutigo','chrysalis','chrysalis-aot','julc-java','plutuz','llvm-uplc-jit','uplc-turbo-bc'];
 
 function parseCSV(csv) {
   const lines = csv.trim().split('\n'), header = lines[0].split(',');

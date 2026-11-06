@@ -96,7 +96,7 @@ What changed:
 | `scalus-js` | Scalus.js | Scala.js / Node.js | shared Node.js loop (`images/node-base`) | [scalus3/scalus](https://github.com/scalus3/scalus) | npm `scalus` [1.4.1](https://github.com/scalus3/scalus/releases/tag/v1.4.1) |
 | `aiken` | Aiken uplc | Rust | Criterion.rs | [aiken-lang/aiken](https://github.com/aiken-lang/aiken) | [v1.1.24](https://github.com/aiken-lang/aiken/releases/tag/v1.1.24) |
 | `aiken-wasm` | Aiken uplc as WASM (Lucid Evolution), badge "decode cached (by the library)" | Rust → WASM / Node.js | shared Node.js loop (`images/node-base`) | [Anastasia-Labs/lucid-evolution](https://github.com/Anastasia-Labs/lucid-evolution/tree/main/packages/uplc) | npm `@lucid-evolution/uplc` [0.4.0](https://github.com/Anastasia-Labs/lucid-evolution/releases/tag/%40lucid-evolution%2Fuplc%400.4.0) |
-| `uplc-turbo` | amaru-uplc (Amaru) | Rust | Criterion.rs | [pragma-org/amaru](https://github.com/pragma-org/amaru) | [`amaru-uplc` 0.4.0 (Amaru v10.11.20261022)](https://github.com/pragma-org/amaru/tree/ddd3fdfc1c01b29d09a4dd59f4ecd2872062153b/crates/amaru-uplc) |
+| `amaru-uplc` | amaru-uplc (Amaru) | Rust | Criterion.rs | [pragma-org/amaru](https://github.com/pragma-org/amaru) | [`amaru-uplc` 0.6.0 (Amaru v10.11.20261105)](https://github.com/pragma-org/amaru/releases/tag/v10.11.20261105) |
 | `plutigo` | Plutigo (Dingo) | Go | testing.B | [blinklabs-io/plutigo](https://github.com/blinklabs-io/plutigo) | [v0.10.0](https://github.com/blinklabs-io/plutigo/releases/tag/v0.10.0) |
 | `blaze-v8` | blaze-plutus on Node (V8), [experimental](#experimental), not ranked | TypeScript | shared Node.js loop (`images/node-base`) | [butaneprotocol/blaze-cardano](https://github.com/butaneprotocol/blaze-cardano) | [@blaze-cardano/plutus 0.1.1](https://github.com/butaneprotocol/blaze-cardano/releases/tag/%40blaze-cardano%2Fplutus%400.1.1) |
 | `chrysalis` | Chrysalis CEK, [experimental](#experimental), not ranked | C# / .NET 10 (JIT) | BenchmarkDotNet | [SAIB-Inc/Chrysalis](https://github.com/SAIB-Inc/Chrysalis) | NuGet `Chrysalis.Plutus` [1.7.14-alpha](https://www.nuget.org/packages/Chrysalis.Plutus/1.7.14-alpha) (pre-release) |
@@ -184,13 +184,13 @@ parameters and hardware. Do not compare them with the current runs.
 
 ```bash
 # Build one image locally (pins come from .env)
-scripts/images.sh build uplc-turbo
+scripts/images.sh build amaru-uplc
 
 # Run images one at a time, then write unified.csv, report.md and index.html into the run dir
-scripts/run-images.sh results/$(date +%F) uplc-turbo plutigo
+scripts/run-images.sh results/$(date +%F) amaru-uplc plutigo
 
 # Smoke test: first 5 scripts, short timing
-BENCH_QUICK=1 scripts/run-images.sh /tmp/smoke uplc-turbo
+BENCH_QUICK=1 scripts/run-images.sh /tmp/smoke amaru-uplc
 
 # A subset: two scripts, D3 timing and check only, short timing
 BENCH_SCRIPTS='auction_1-1|uniswap-1' BENCH_LOOPS=d3,check BENCH_TIMING=quick \
@@ -211,7 +211,7 @@ One image by hand:
 ```bash
 docker run --rm --cap-add SYS_NICE \
   -v "$PWD/data:/bench/data:ro" -v "$PWD/results/<date>:/results" \
-  ghcr.io/lantr-io/pvb-uplc-turbo:latest
+  ghcr.io/lantr-io/pvb-amaru-uplc:latest
 ```
 
 Results are written to the results dir:

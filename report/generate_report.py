@@ -57,7 +57,7 @@ from html import escape
 
 VM_ORDER = [
     "haskell", "scalus-jit", "scalus-cek", "scalus-js",
-    "aiken", "aiken-wasm", "uplc-turbo",
+    "aiken", "aiken-wasm", "amaru-uplc",
     "plutigo", "blaze-jsc", "blaze-v8",
     "chrysalis", "chrysalis-aot", "julc-java", "plutuz", "llvm-uplc-jit", "uplc-turbo-bc",
 ]
@@ -173,7 +173,7 @@ def d3_ranked(present_vms) -> list[str]:
     return [vm for vm in present_vms if vm not in DECODE_CACHED]
 
 VM_LABELS = {
-    "uplc-turbo": "amaru-uplc (Rust)",
+    "amaru-uplc": "amaru-uplc (Rust)",
     "plutigo": "Plutigo (Go)",
     "blaze-jsc": "blaze-plutus (TypeScript / Bun JSC)",
     "blaze-v8": "blaze-plutus (TypeScript / Node V8)",
@@ -201,7 +201,7 @@ VM_FACTS = {
     "scalus-js": {"lang": "Scala.js", "runtime": "Node (V8)", "model": "Interpreter (CEK)"},
     "aiken": {"lang": "Rust", "runtime": "native", "model": "Interpreter (CEK)"},
     "aiken-wasm": {"lang": "Rust → WASM", "runtime": "Node (V8)", "model": "Interpreter (CEK)"},
-    "uplc-turbo": {"lang": "Rust", "runtime": "native", "model": "Interpreter (AST walker)"},
+    "amaru-uplc": {"lang": "Rust", "runtime": "native", "model": "Interpreter (AST walker)"},
     "plutigo": {"lang": "Go", "runtime": "native", "model": "Interpreter (CEK)"},
     "blaze-jsc": {"lang": "TypeScript", "runtime": "Bun (JSC)", "model": "Interpreter (CEK)"},
     "blaze-v8": {"lang": "TypeScript", "runtime": "Node (V8)", "model": "Interpreter (CEK)"},
@@ -245,11 +245,11 @@ VM_SOURCES = {
         "env": "LUCID_UPLC_VERSION", "pattern": r"^(\d+(?:\.\d+)+)", "tag": "0.4.0",
         "version": "@lucid-evolution/uplc {tag}",
         "release": "https://github.com/Anastasia-Labs/lucid-evolution/releases/tag/@lucid-evolution/uplc@{tag}"},
-    "uplc-turbo": {
+    "amaru-uplc": {
         "repo": "https://github.com/pragma-org/amaru", "home": None,
-        "env": "AMARU_UPLC_VERSION", "pattern": r"^(\d+(?:\.\d+)+)", "tag": "0.4.0",
-        "version": "amaru-uplc {tag}", "sha_env": "AMARU_UPLC_SHA",
-        "release": "https://github.com/pragma-org/amaru/tree/{sha}/crates/amaru-uplc"},
+        "env": "AMARU_UPLC_VERSION", "pattern": r"^(\d+(?:\.\d+)+)", "tag": "0.6.0",
+        "version": "amaru-uplc {tag} (Amaru v10.11.20261105)",
+        "release": "https://github.com/pragma-org/amaru/releases/tag/v10.11.20261105"},
     "plutigo": {
         "repo": "https://github.com/blinklabs-io/plutigo", "home": None,
         "env": "PLUTIGO_SHA", "pattern": r"#\s*(v\d+(?:\.\d+)+)", "tag": "v0.10.0",
@@ -324,7 +324,7 @@ USED_BY = {
     "aiken-wasm": [
         ("Lucid Evolution", "SDK", "https://github.com/Anastasia-Labs/lucid-evolution",
          "https://github.com/Anastasia-Labs/lucid-evolution/blob/main/packages/lucid/package.json#L63")],
-    "uplc-turbo": [
+    "amaru-uplc": [
         ("Amaru", "node", "https://github.com/pragma-org/amaru",
          "https://github.com/pragma-org/amaru/blob/main/Cargo.toml#L147")],
     "plutigo": [
@@ -351,15 +351,6 @@ def vm_links(env: dict[str, str]) -> dict[str, dict]:
     the .env pin when its pattern matches, else from VM_SOURCES."""
     out = {}
     for vm, s in VM_SOURCES.items():
-        if vm == "uplc-turbo" and "AMARU_UPLC_VERSION" not in env and "UPLC_TURBO_SHA" in env:
-            # Existing result directories keep the original pragma-org/uplc pin in pins.env.
-            s = {
-                "repo": "https://github.com/pragma-org/uplc", "home": None,
-                "env": "UPLC_TURBO_SHA",
-                "pattern": r"#\s*(amaru-uplc-v\d+(?:\.\d+)+)",
-                "tag": "amaru-uplc-v0.4.0", "version": "{tag}",
-                "release": "https://github.com/pragma-org/uplc/releases/tag/{tag}",
-            }
         m = re.search(s["pattern"], env.get(s["env"], ""))
         tag = m.group(1) if m else s["tag"]
         sha = env.get(s.get("sha_env", ""), "").split("#", 1)[0].strip()

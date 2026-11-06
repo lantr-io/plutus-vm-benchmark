@@ -1,0 +1,18 @@
+[package]
+name = "amaru-uplc-bench"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+amaru-kernel = "=0.6.0"
+amaru-uplc = { version = "=0.6.0", default-features = false, features = ["malachite"] }
+bumpalo = { version = "=3.20.3", features = ["allocator_api", "collections"] }
+
+[dev-dependencies]
+criterion = { version = "=0.8.2", features = ["html_reports"] }
+
+[[bench]]
+name = "use_cases"
+path = "use_cases.rs"
+harness = false

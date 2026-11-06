@@ -35,7 +35,7 @@ See `docs/IMAGE_CONTRACT.md`. An image reads `/bench/data/plutus_use_cases/*.fla
 ```bash
 BENCH_SCRIPTS='auction_1-1|uniswap-1' BENCH_LOOPS=d3,check BENCH_TIMING=quick \
   scripts/run-images.sh /tmp/subset plutigo aiken
-BENCH_LOOPS=check scripts/run-images.sh /tmp/check uplc-turbo
+BENCH_LOOPS=check scripts/run-images.sh /tmp/check amaru-uplc
 ```
 
 ## Add or bump a VM

@@ -34,7 +34,7 @@ ERROR_PATTERNS = [
     # Go (Plutigo)
     r"^panic:",
     r"^goroutine\s+\d+",
-    # Rust (uplc-turbo)
+    # Rust (amaru-uplc)
     r"^EVAL_FAIL:",
     r"thread '.*' panicked",
     # Node.js (blaze, scalus-js, aiken-wasm)
@@ -55,7 +55,7 @@ SCRIPT_CONTEXT_PATTERNS = [
     r"^Benchmarking\s+(\S+)",
     # JMH (Scalus): "# Parameters: (file = script-name.flat)"
     r"# Parameters:.*file\s*=\s*(\S+?)(?:\.flat)?\)",
-    # uplc-turbo: "EVAL_FAIL: script-name"
+    # amaru-uplc: "EVAL_FAIL: script-name"
     r"^EVAL_FAIL:\s+(\S+)",
     # The header line of a run script before each process: "--- script-name: process 123"
     r"^--- (\S+): process \d+",

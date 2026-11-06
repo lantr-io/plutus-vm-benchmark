@@ -13,7 +13,7 @@
 //!   `<CRITERION_HOME>/eval/<script>/new/estimates.json`.
 //!
 //! In both loops the result is dropped inside the timed routine, as in the
-//! uplc-turbo harness. `parsers/parse_criterion.py` reads `<CRITERION_HOME>`
+//! amaru-uplc harness. `parsers/parse_criterion.py` reads `<CRITERION_HOME>`
 //! for d3 (it skips the `eval` dir, which has no estimates of its own) and
 //! `<CRITERION_HOME>/eval` for eval.
 //!

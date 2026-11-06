@@ -7,3 +7,4 @@ data
 nix
 **/__pycache__
 **/*.pyc
+**/target
