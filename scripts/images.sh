@@ -113,7 +113,7 @@ input_files() {
                     # shellcheck disable=SC2086
                     if [[ -d "$src" ]]; then find "$src" -type f; else ls -1 $src; fi
                 done
-        } | sed 's|^\./||; s|/$||' | grep -v -e '__pycache__' -e '\.pyc$' | LC_ALL=C sort -u
+        } | sed 's|^\./||; s|/$||' | grep -v -e '__pycache__' -e '\.pyc$' -e '/target/' -e '^target/' | LC_ALL=C sort -u
     )
 }
 

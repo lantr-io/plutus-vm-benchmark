@@ -17,7 +17,7 @@ import sys
 HEADER = "vm,script,mean_ns,median_ns,min_ns,max_ns,stddev_ns,iterations"
 
 
-def parse(criterion_dir: str, vm_name: str = "uplc-turbo") -> None:
+def parse(criterion_dir: str, vm_name: str = "amaru-uplc") -> None:
     print(HEADER)
 
     if not os.path.isdir(criterion_dir):
@@ -72,5 +72,5 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <criterion-output-dir> [vm-name]", file=sys.stderr)
         sys.exit(1)
-    vm = sys.argv[2] if len(sys.argv) > 2 else "uplc-turbo"
+    vm = sys.argv[2] if len(sys.argv) > 2 else "amaru-uplc"
     parse(sys.argv[1], vm)

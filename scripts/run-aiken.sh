@@ -29,7 +29,7 @@ fi
 # the D3 ranking), then eval of a program decoded once before timing (aiken-eval.csv).
 # A crash of the bench binary must not kill the run: missing scripts become -1 rows below.
 #
-# Criterion settings (spec D13), the same as scripts/run-uplc-turbo.sh: Criterion.rs 0.7.0 with
+# Criterion settings (spec D13), the same as scripts/run-amaru-uplc.sh: Criterion.rs 0.7.0 with
 # its default warm-up (3 s) and measurement time (5 s), 100 samples, no plots.
 TIMING=(--warm-up-time 3 --measurement-time 5)
 if [[ "${BENCH_TIMING:-normal}" == quick ]]; then

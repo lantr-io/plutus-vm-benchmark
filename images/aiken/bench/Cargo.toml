@@ -7,7 +7,7 @@ publish = false
 # The Dockerfile clones aiken-lang/aiken next to this crate, at ../aiken.
 [dependencies]
 uplc = { path = "../aiken/crates/uplc" }
-# The Criterion of the uplc-turbo row: the version of its Cargo.lock (0.7.0) and the same
+# The Criterion of the amaru-uplc row: the version of its Cargo.lock (0.7.0) and the same
 # features (crates/uplc/Cargo.toml of pragma-org/uplc: html_reports), so both Rust rows use one
 # framework. The run scripts pass --noplot, so no report is drawn.
 criterion = { version = "=0.7.0", features = ["html_reports"] }

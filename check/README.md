@@ -21,7 +21,7 @@ not published.
 |---|---|---|
 | haskell | strict | `gate-ref` path, or `HASKELL_SHA` at 1.63.0.0 (its compiled-in model = mainnet) |
 | scalus-cek, scalus-jit | strict | The harness reads `reference/mainnet-plutusv3-costmodel.json` (copied into the image, path in `SCALUS_COST_MODEL`): `MachineParams.fromCostModels(CostModels(Map(PlutusV3.ordinal -> array)), PlutusV3, vanRossemPV)`, then `makePlutusV3VM(params, vanRossemPV)` (`images/scalus/harness/.../Harness.scala`) |
-| uplc-turbo | strict | Ships the variant E numbers in `BuiltinCostsV3::default()` |
+| amaru-uplc | strict | Constructs the released crate's default V3/PV11 `CostModel` once per process |
 | plutigo | strict | `cek.NewEvalContext(lang.LanguageVersionV3, cek.ProtoVersion{Major: 11}, mainnetArray)` (`cek/eval_context.go:31`), then `cek.NewMachine(lang.LanguageVersionV3, 0, ctx)`. Takes the 350-value array (`lang/v3.go` has the V3 names up to PV11). The bench must stop taking the language from the program version |
 | blaze (V8, JSC) | strict, harness work | `new CekMachine(undefined, costs)` (`machine.ts:68`) takes `costs: Record<DefaultFunction, BuiltinCostModel>`, a structured table, not the array. blaze has no parser, so the harness maps the array into the table (or overrides the five builtins that differ: `equalsByteString` cpu 30623/28755/75, `c11` = 960 in `divideInteger`, `quotientInteger`, `remainderInteger`, `modInteger`). Machine step costs are constants in `machine.ts`, equal to mainnet. If nobody writes the mapping: badge |
 
@@ -176,7 +176,7 @@ Does the timed loop run with costing on, and how does each VM get a `<vm>-check.
 | haskell | Costing on (`restrictingEnormous`) | PlutusV3, variant E, compiled-in cost model. At the current pin E = the old C files: **fails the gate until `HASKELL_SHA` moves to 1.63.0.0** | `CekReport` cost: `CountingSt` with `counting` | Use `gate-ref` from this directory (same code path, same image base). Small | Fail on 89 at the current pin (variant C files); pass at 1.63.0.0 |
 | scalus-cek | Costing on (`RestrictingBudgetSpender(ExUnits.enormous)`) | **`makePlutusV1VM(vanRossemPV)`**: mainnet PlutusV1 cost model, variant D. Must change to `makePlutusV3VM(vanRossemPV)` | `BudgetSpender.getSpentBudget` (`CountingBudgetSpender`) | Same loop with a `CountingBudgetSpender`, print `steps`/`memory` (see `scalus-crosscheck.sc`). Trivial | Fail (PlutusV1 cost model) until the harness uses `makePlutusV3VM`; Scalus 1.4.0 with V3 passes 89/89 |
 | scalus-jit | **Costing off** (`NoBudgetSpender`, `JITBenchmark.scala:43`) | Mainnet PlutusV3, PV11 | Pass a `CountingBudgetSpender` to the compiled function, then `getSpentBudget` | Same call with a `CountingBudgetSpender`. Trivial. The timed loop must also switch to a real spender (D3) | Likely pass (mainnet V3 params, same as scalus-cek V3) |
-| uplc-turbo | Costing on, capped at the transaction limit (`ExBudget::default()`, 14M mem / 10G cpu) | V3, built-in `BuiltinCostsV3::default()` | `EvalResult.info.consumed_budget` | Example binary: eval each file, print `consumed_budget.cpu/mem`. Small | Likely pass: its V3 table has the variant E constants |
+| amaru-uplc | Costing on, capped at the transaction limit (`ExBudget::default()`, 14M mem / 10G cpu) | V3, released crate default via `CostModel::v3()` | `EvalResult.info.consumed_budget` | Standalone Cargo harness: eval each file, print `consumed_budget.cpu/mem` | Likely pass: its default V3/PV11 table has the variant E constants |
 | plutigo | Costing on, capped at the transaction limit (`DefaultExBudget`) | **Language taken from the program version**: UPLC 1.0.0 runs as V1, 1.1.0 as V2, variant B, protocol version 200; one `DefaultCostModel`. Must pass V3 explicitly | None; `Machine.ExBudget` is the remaining budget, spent = `DefaultExBudget - m.ExBudget` | Go test or main: decode, `NewMachine`, `Run`, subtract. Small | Fail: ships variant C constants only, and evaluates as V1/V2 |
 | blaze (V8, JSC) | Costing on, unlimited budget (counting) | `DEFAULT_BUILTIN_COSTS`, "Default PlutusV3 (Conway era)" | `CekMachine.remainingBudget`, spent = `I64_MAX - remaining` | Existing CLI `bun scripts/eval.ts --flat -p f.flat` prints `cpu`/`mem`; loop over files. Trivial | Fail: ships variant C constants only |
 | julc-java | Costing on, unlimited budget (`null` budget) | PlutusV3, `DefaultCostModel` | `EvalResult.budgetConsumed()`, `isSuccess()` | Single-file Java with the same `evaluate` call. Trivial | Fail: ships variant C constants only |
@@ -193,9 +193,9 @@ Other findings:
 - julc and opshin do not check the evaluation result in the timed loop (`EvalResult.Failure` and
   `.result` hold the error without a throw). A failing script would be timed as if it passed. The
   check closes this gap.
-- uplc-turbo's bench calls `.expect` on the result, so one failing script stops the Criterion run;
-  `run-uplc-turbo.sh` hides it with `|| true` and `fill_failures`.
-- Flat decoding is inside the timed loop for uplc-turbo, plutigo, blaze and opshin, and outside it
+- amaru-uplc's runner evaluates each selected script in its own process and records failures, so one
+  failing script does not stop the remaining Criterion runs.
+- Flat decoding is inside the timed loop for amaru-uplc, plutigo, blaze and opshin, and outside it
   for haskell, scalus and julc. D3 asks for decode + evaluate.
 - A cap at the transaction limit (14M mem / 10G cpu) does not change ExUnits for scripts that fit.
   All 89 scripts fit: the largest is `coop-3` with 2.15G cpu and 11.7M mem.

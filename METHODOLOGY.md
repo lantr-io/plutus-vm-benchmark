@@ -152,7 +152,7 @@ and the runner is `scripts/run-<vm>.sh`.
 | haskell | Criterion | Criterion's warm-up; about 5 s per script, Criterion's default (`timeLimit = 5`) |
 | scalus-cek, scalus-jit, julc-java | JMH 1.37, shared runner (`scripts/jmh-run.sh`) | One 30 s warm-up iteration, three 5 s measurement iterations (`-wi 1 -w 30s -i 3 -r 5s`). One fork per method and script (`-f 1`) |
 | aiken | Criterion.rs | Criterion.rs default warm-up, 5 s measurement |
-| uplc-turbo | Criterion.rs | Criterion.rs default warm-up, 5 s measurement |
+| amaru-uplc | Criterion.rs | Criterion.rs default warm-up, 5 s measurement |
 | plutigo | Go testing.B | Automatic `b.N` scaling, `-test.benchtime=5s` |
 | blaze-v8, scalus-js, aiken-wasm | One shared loop (JMH shape, `images/node-base/time.mjs`), plain Node.js | Adaptive warm-up (5 to 30 s), three 5 s measurements (a JIT runtime, V8) |
 
@@ -357,11 +357,11 @@ run. The ratio is less sensitive to hardware changes and to drift between runs t
     when the run has Criterion's `--json` report, else 0 (the CSV and the log do not have it).
 - **JIT warm-up**: the JVM and V8 compile hot code at run time. Their frameworks warm up first,
   but the execution model differs from ahead-of-time compiled VMs.
-- **Cost model rebuilt per iteration**: some public APIs do not let a harness keep the cost model
-  or machine parameters across evaluations. uplc-turbo builds its default cost model in every
-  evaluation call, because the crate keeps the cost model types private. Aiken's machine takes the
-  cost model by value, and the crate's evaluation entry point builds a new one per call.
-  This work is in their timed loops. scalus-js builds its machine (`PlutusVM`) once and reuses it.
+- **Cost model construction**: some public APIs do not let a harness keep the cost model or machine
+  parameters across evaluations. amaru-uplc constructs its default V3/PV11 `CostModel` once per
+  process and clones it for `Program::eval`. Aiken's machine takes the cost model by value, and
+  its evaluation entry point builds a new one per call. This work is in their timed loops.
+  scalus-js builds its machine (`PlutusVM`) once and reuses it.
 - **Memory use is not compared**: the VMs use different allocators and garbage collectors.
 - **Docker overhead**: containers add a small overhead compared with bare metal. It applies to all VMs.
 
