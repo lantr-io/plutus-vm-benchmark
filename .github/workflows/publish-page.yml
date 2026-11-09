@@ -79,6 +79,7 @@ jobs:
         run: |
           git add docs/index.html docs/robots.txt docs/sitemap.xml docs/og.png \
                   "results/$RUN/index.html" "results/$RUN/report.md"
+          if [[ -f "results/$RUN/og.png" ]]; then git add "results/$RUN/og.png"; fi
           if git diff --cached --quiet; then
             echo "page unchanged"
             exit 0

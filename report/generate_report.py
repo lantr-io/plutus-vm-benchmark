@@ -2,10 +2,11 @@
 """Generate markdown and HTML comparison reports from unified.csv.
 
 Usage: generate_report.py [--write-index] <run-dir>
-Writes <run-dir>/report.md and <run-dir>/index.html. With --write-index, also writes the same page
-to <repo>/docs/index.html, the published page: only run.yml sets it, for a published run. Then it
-also writes docs/robots.txt, docs/sitemap.xml and docs/og.png (the link-preview image, a headless
-Chrome screenshot; without Chrome the committed og.png stays).
+Writes <run-dir>/report.md and <run-dir>/index.html, and for a published run (YYYY-MM-DD[-N]) its
+link-preview image <run-dir>/og.png. With --write-index, also writes the same page to
+<repo>/docs/index.html, the published page: only run.yml sets it, for a published run. Then it
+also writes docs/robots.txt, docs/sitemap.xml and docs/og.png. The og.png files are headless
+Chrome screenshots; without Chrome the committed ones stay.
 
 Reads from the run dir:
 - unified.csv            timings of every VM
@@ -1106,7 +1107,13 @@ def generate_html(run_dir: str, env_info: str, data, scripts, present_vms, exper
         with open(html_path, "w") as f:
             f.write(page)
         print(f"HTML report saved to: {html_path}", file=sys.stderr)
-        write_site_files(seo["rows"], seo["date"], len(scripts))
+        write_site_files(seo["date"])
+    # The link-preview image: docs/og.png for the main page, and results/<run>/og.png for the
+    # permalink of a published run (its head links it).
+    og_dests = ([os.path.join(docs_dir, OG_IMAGE)] if write_index else []) + (
+        [os.path.join(run_dir, OG_IMAGE)] if run_page_url(os.path.basename(os.path.abspath(run_dir))) else [])
+    if og_dests:
+        write_og_image(seo["rows"], seo["date"], len(scripts), og_dests)
 
     # The run dir's copy has no docs/ next to it: embed the logo.
     with open(os.path.join(docs_dir, LOGO), "rb") as f:
@@ -1120,13 +1127,13 @@ def generate_html(run_dir: str, env_info: str, data, scripts, present_vms, exper
 # --- Search engines and link previews --------------------------------------------------------
 # Most numbers on the page are drawn by JavaScript. The helpers below add what a crawler reads
 # without JavaScript: the <head> tags (description, canonical, Open Graph, JSON-LD), a static
-# intro, a summary table and a FAQ. With --write-index, write_site_files also writes
+# intro, a summary table and a FAQ. With --write-index, write_site_files and write_og_image also write
 # docs/robots.txt, docs/sitemap.xml and docs/og.png (the link-preview image).
 
 SITE_URL = "https://plutus-vm-bench.lantr.io/"
 RAW_URL = "https://raw.githubusercontent.com/lantr-io/plutus-vm-benchmark/main"
 PAGE_TITLE = "Plutus VM Benchmark: Cardano smart contract evaluator speed"
-# Committed static files in docs/. og.png is rewritten by write_site_files when Chrome is found.
+# Committed static files in docs/. og.png is rewritten by write_og_image when Chrome is found.
 FAVICON = "favicon.svg"
 OG_IMAGE = "og.png"
 OG_SIZE = (1200, 630)
@@ -1346,11 +1353,13 @@ def json_ld(rows, items, run_dir: str, date: str, description: str, n_scripts: i
     return json.dumps({"@context": "https://schema.org", "@graph": graph}, ensure_ascii=False).replace("</", "<\\/")
 
 
-def seo_head(description: str, date: str, ld: str, published: bool, favicon: str) -> str:
+def seo_head(description: str, date: str, ld: str, published: bool, favicon: str,
+             page_url: str = SITE_URL) -> str:
     """The <head> tags after <title>. published: the page at SITE_URL (docs/index.html); else the
-    copy in results/<run>/, served at SITE_URL/results/<run>/ as the permalink of that run:
-    noindex, no canonical."""
-    og_image = f"{SITE_URL}{OG_IMAGE}?v={date}"
+    copy in results/<run>/, served at page_url = SITE_URL/results/<run>/ as the permalink of that
+    run: noindex, no canonical. Each page links its own link-preview image (page_url + og.png), so
+    a shared permalink keeps the chart of its run after a newer run replaces the main page."""
+    og_image = f"{page_url}{OG_IMAGE}?v={date}"
     alt = "Plutus VM Benchmark: decode + eval geometric mean of the fastest ranked Plutus VMs"
     d = escape(description)
     lines = [
@@ -1368,7 +1377,7 @@ def seo_head(description: str, date: str, ld: str, published: bool, favicon: str
         '<meta property="og:locale" content="en_US">',
         f'<meta property="og:title" content="{escape(PAGE_TITLE)}">',
         f'<meta property="og:description" content="{d}">',
-        f'<meta property="og:url" content="{SITE_URL}">',
+        f'<meta property="og:url" content="{page_url}">',
         f'<meta property="og:image" content="{og_image}">',
         f'<meta property="og:image:width" content="{OG_SIZE[0]}">',
         f'<meta property="og:image:height" content="{OG_SIZE[1]}">',
@@ -1395,7 +1404,8 @@ def seo_parts(run_dir, data, scripts, present_vms, experimental, gate, eval_ns, 
     return {
         "date": date, "rows": rows,
         "head": seo_head(description, date, ld, True, FAVICON),
-        "head_run": seo_head(description, date, ld, False, favicon_uri),
+        "head_run": seo_head(description, date, ld, False, favicon_uri,
+                             run_page_url(os.path.basename(os.path.abspath(run_dir))) or SITE_URL),
         "{{SEO_INTRO}}": intro_html(rows, len(scripts), date),
         "{{SEO_SUMMARY_SUB}}": f"all VMs, geometric mean over {len(scripts)} scripts",
         "{{SEO_SUMMARY}}": summary_html(rows, len(scripts)),
@@ -1462,12 +1472,12 @@ def png_size(path: str) -> tuple[int, int] | None:
     return int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")
 
 
-def write_og_image(rows: list[dict], date: str, n_scripts: int) -> None:
-    """docs/og.png from og_card_html with headless Chrome. Without Chrome (python:3.12-slim) or on
-    any failure, keep the committed docs/og.png."""
+def write_og_image(rows: list[dict], date: str, n_scripts: int, dests: list[str]) -> None:
+    """The og.png files in dests (docs/og.png, results/<run>/og.png) from og_card_html with
+    headless Chrome. Without Chrome (python:3.12-slim) or on any failure, keep the committed ones."""
     chrome = find_chrome()
     if not chrome:
-        print("og.png: no Chrome found, docs/og.png not changed", file=sys.stderr)
+        print("og.png: no Chrome found, og.png not changed", file=sys.stderr)
         return
     with tempfile.TemporaryDirectory() as tmp:
         card, shot = os.path.join(tmp, "og.html"), os.path.join(tmp, "og.png")
@@ -1479,19 +1489,20 @@ def write_og_image(rows: list[dict], date: str, n_scripts: int) -> None:
         try:
             subprocess.run(cmd, check=True, timeout=120, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except (OSError, subprocess.SubprocessError) as e:
-            print(f"og.png: Chrome failed ({e}), docs/og.png not changed", file=sys.stderr)
+            print(f"og.png: Chrome failed ({e}), og.png not changed", file=sys.stderr)
             return
         if not os.path.isfile(shot) or png_size(shot) != OG_SIZE:
             print(f"og.png: unexpected screenshot {png_size(shot) if os.path.isfile(shot) else None}, "
-                  "docs/og.png not changed", file=sys.stderr)
+                  "og.png not changed", file=sys.stderr)
             return
-        shutil.copyfile(shot, os.path.join(DOCS_DIR, OG_IMAGE))
-    print(f"og.png saved to: {os.path.join(DOCS_DIR, OG_IMAGE)}", file=sys.stderr)
+        for dest in dests:
+            shutil.copyfile(shot, dest)
+            print(f"og.png saved to: {dest}", file=sys.stderr)
 
 
-def write_site_files(rows: list[dict], date: str, n_scripts: int) -> None:
-    """docs/robots.txt, docs/sitemap.xml and docs/og.png for the published site. The sitemap lists
-    the main page only: the per-run copies in results/ are not deployed (run.yml uploads docs/)."""
+def write_site_files(date: str) -> None:
+    """docs/robots.txt and docs/sitemap.xml for the published site. The sitemap lists the main page
+    only: the permalink copies of the runs (results/<run>/) have noindex."""
     with open(os.path.join(DOCS_DIR, "robots.txt"), "w") as f:
         f.write(f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n")
     with open(os.path.join(DOCS_DIR, "sitemap.xml"), "w") as f:
@@ -1499,7 +1510,6 @@ def write_site_files(rows: list[dict], date: str, n_scripts: int) -> None:
                 '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                 f"  <url>\n    <loc>{SITE_URL}</loc>\n    <lastmod>{date}</lastmod>\n  </url>\n"
                 "</urlset>\n")
-    write_og_image(rows, date, n_scripts)
 
 
 def generate(run_dir: str, write_index: bool = False) -> None:
