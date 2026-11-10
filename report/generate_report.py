@@ -253,7 +253,7 @@ VM_SOURCES = {
         "release": "https://github.com/pragma-org/amaru/tree/{sha}/crates/amaru-uplc"},
     "plutigo": {
         "repo": "https://github.com/blinklabs-io/plutigo", "home": None,
-        "env": "PLUTIGO_SHA", "pattern": r"#\s*(v\d+(?:\.\d+)+)", "tag": "v0.10.0",
+        "env": "PLUTIGO_SHA", "pattern": r"#\s*(v\d+(?:\.\d+)+)", "tag": "v0.11.6",
         "release": "https://github.com/blinklabs-io/plutigo/releases/tag/{tag}"},
     "blaze-jsc": {
         "repo": _BLAZE_REPO, "home": "https://blaze.butane.dev",
@@ -330,7 +330,7 @@ USED_BY = {
          "https://github.com/pragma-org/amaru/blob/main/Cargo.toml#L147")],
     "plutigo": [
         ("Dingo", "node", "https://github.com/blinklabs-io/dingo",
-         "https://github.com/blinklabs-io/dingo/blob/main/go.mod#L24")],
+         "https://github.com/blinklabs-io/dingo/blob/v0.92.0/go.mod#L22")],
 }
 
 

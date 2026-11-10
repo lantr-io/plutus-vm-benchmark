@@ -137,7 +137,7 @@ func BenchmarkPvbFlatFiles(b *testing.B) {
 		content := s.content
 		fmt.Printf("PVB_LOOP d3 %s\n", s.name)
 		b.Run(s.name, func(b *testing.B) {
-			// One machine per script; Run restores the initial budget on every call.
+			// One machine per script; the budget is reset before each Run.
 			machine := pvbMachine(ctx)
 			decoder := syn.NewDeBruijnDecoder()
 			for b.Loop() {
@@ -145,6 +145,7 @@ func BenchmarkPvbFlatFiles(b *testing.B) {
 				if err != nil {
 					b.Fatalf("decode error: %v", err)
 				}
+				machine.SetExBudget(pvbBudget)
 				if _, err := machine.Run(program.Term); err != nil {
 					b.Fatalf("eval error: %v", err)
 				}
@@ -155,11 +156,11 @@ func BenchmarkPvbFlatFiles(b *testing.B) {
 
 // BenchmarkPvbEval times evaluation only: the program is decoded once, outside the timed loop.
 //
-// The machine is built once per script, as in BenchmarkPvbFlatFiles. Machine.Run at the pinned
-// SHA gives every call fresh evaluation state (cek/machine.go, Run): it restores the initial
-// budget when the caller did not change it (lines 939-942), empties Logs and the unbudgeted step
-// counters (950-952), resets the frame stack (944, 957), and its deferred block clears the value
-// and env arenas (953-971); the environment of a run starts empty (stack_machine_debruijn.go 265).
+// The machine is built once per script, as in BenchmarkPvbFlatFiles, and the budget is reset with
+// SetExBudget before each Run. Machine.Run at the pinned SHA gives every call otherwise fresh
+// evaluation state (cek/machine.go, Run): it empties Logs and the unbudgeted step counters
+// (950-952), resets the frame stack (944, 957), and its deferred block clears the value and env
+// arenas (953-971); the environment of a run starts empty (stack_machine_debruijn.go 265).
 // What survives a run is allocator state: object pools, arena chunks and an interning cache of
 // immutable integer constants (cek/value.go 98-113).
 //
@@ -183,6 +184,7 @@ func BenchmarkPvbEval(b *testing.B) {
 		machine := pvbMachine(ctx)
 		reuseOk := true
 		for range 2 {
+			machine.SetExBudget(pvbBudget)
 			if _, err := machine.Run(program.Term); err != nil {
 				reuseOk = false
 				break
@@ -200,6 +202,7 @@ func BenchmarkPvbEval(b *testing.B) {
 			machine := pvbMachine(ctx)
 			term := program.Term
 			for b.Loop() {
+				machine.SetExBudget(pvbBudget)
 				if _, err := machine.Run(term); err != nil {
 					b.Fatalf("eval error: %v", err)
 				}
