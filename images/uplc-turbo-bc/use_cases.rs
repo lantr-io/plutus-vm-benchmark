@@ -10,13 +10,13 @@
 // flat::decode), V3 builtin semantics, a budget too large to run out (ExBudget::max()), mainnet
 // PlutusV3 cost model.
 //
-// Cost model: built once from the mainnet array (CostModel::initialize_cost_model) and cloned for
-// every evaluation, because vm::execute takes it by value (the Dockerfile adds Clone to the cost
-// model types). The crate's CostModel::default() for V3 is not the mainnet model: its CPU budgets
-// differ from the Haskell reference on every script. The pinned crate knows the first 297
-// PlutusV3 parameters only (cost_map.rs): with any other length it drops the bitwise builtins'
-// parameters, and the costs of the later builtins are fixed in builtin_costs_v3.rs. So it gets the
-// first 297 of the 350 mainnet values. The check (gate) proves the budgets equal Haskell's.
+// Cost model: built once from the mainnet array (CostModel::initialize_cost_model) and passed by
+// reference for every evaluation. The crate's CostModel::default() for V3 is not the mainnet
+// model: its CPU budgets differ from the Haskell reference on every script. The pinned crate knows
+// the first 297 PlutusV3 parameters only (cost_map.rs): with any other length it drops the bitwise
+// builtins' parameters, and the costs of the later builtins are fixed in builtin_costs_v3.rs. So
+// it gets the first 297 of the 350 mainnet values. The check (gate) proves the budgets equal
+// Haskell's.
 //
 // Modes:
 //   PVB_CHECK_OUT=<csv>  one evaluation per script, write vm,script,status,cpu,mem; no timing
@@ -90,7 +90,7 @@ fn compile<'a>(program: &'a Program<'a, DeBruijn>) -> CompiledProgram<'a> {
 fn execute<'a>(
     arena: &'a Arena,
     compiled: &'a CompiledProgram<'a>,
-    cost_model: CostModel<BuiltinCostsV3>,
+    cost_model: &CostModel<BuiltinCostsV3>,
 ) -> Result<(i64, i64), (String, i64, i64)> {
     let result = vm::execute(
         arena,
@@ -114,7 +114,7 @@ fn eval_once(
 ) -> Result<(i64, i64), (String, i64, i64)> {
     let program = decode(arena, bytes).map_err(|e| (e, 0, 0))?;
     let compiled = compile(program);
-    execute(arena, &compiled, model.clone())
+    execute(arena, &compiled, model)
 }
 
 fn load_cost_model() -> CostModel<BuiltinCostsV3> {
@@ -173,7 +173,7 @@ fn bench(c: &mut Criterion, loops: &[&str]) {
                             &arena,
                             &compiled,
                             ExBudget::max(),
-                            model.clone(),
+                            &model,
                             BuiltinSemantics::from(&PlutusVersion::V3),
                         );
                         std::hint::black_box(result.term.is_ok());
@@ -197,7 +197,7 @@ fn bench(c: &mut Criterion, loops: &[&str]) {
                             &arena,
                             &compiled,
                             ExBudget::max(),
-                            model.clone(),
+                            &model,
                             BuiltinSemantics::from(&PlutusVersion::V3),
                         );
                         std::hint::black_box(result.term.is_ok());
